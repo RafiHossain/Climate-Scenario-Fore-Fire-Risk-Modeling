@@ -1,0 +1,66 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_curve, auc
+import matplotlib.pyplot as plt
+
+# Load the dataset 
+df = pd.read_csv('Nib.csv')
+
+# Extract the features and target variable
+X = df[['Aridity Index', 'Aspect', 'Curvature', 'CWD', 'DEM', 'LAI', 'LULC', 'NDBI', 
+        'NDMI', 'NDVI', 'NDWI', 'Evapotranspiration', 'Rainfall', 'Relative Humidity', 
+        'Roughness', 'Slope', 'Temperature', 'Wind Speed', 'LST']]
+y = df['Type']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Create a decision tree base estimator
+base_estimator = DecisionTreeClassifier(random_state=42)
+
+# Create a bagging classifier
+treebag = BaggingClassifier(estimator=base_estimator, n_estimators=100, random_state=42)
+
+# Fit the classifier to the training data
+treebag.fit(X_train, y_train)
+
+# Make predictions on the test data
+y_pred = treebag.predict(X_test)
+
+# Calculate the accuracy of the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.2f}")
+
+# Calculate the relative importance of each independent variable
+importances = np.mean([tree.feature_importances_ for tree in treebag.estimators_], axis=0)
+
+# Normalize the importance scores to sum to 100%
+importance_scores_percentage = (importances / importances.sum()) * 100
+
+# Print the feature importance scores in percentage format
+print("Feature Importance Scores (%):")
+for feature, importance in zip(X.columns, importance_scores_percentage):
+    print(f"{feature}: {importance:.2f}%")  # Display with two decimal places
+
+# Obtain the predicted probabilities for each class
+y_prob = treebag.predict_proba(X_test)
+y_prob_pos = y_prob[:, 1]
+
+# Compute ROC curve and AUC score
+fpr, tpr, thresholds = roc_curve(y_test, y_prob_pos)
+roc_auc = auc(fpr, tpr)
+
+# Plot ROC curve
+plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.savefig('roc_curve.png')
+plt.show()
