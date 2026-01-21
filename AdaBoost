@@ -1,0 +1,61 @@
+import pandas as pd
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, roc_curve, auc
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Load the dataset
+df = pd.read_csv('Nib.csv')
+
+# Extract the features and target variable
+X = df[['Aridity Index', 'Aspect', 'Curvature', 'CWD', 'DEM', 'LAI', 'LULC', 'NDBI', 
+        'NDMI', 'NDVI', 'NDWI', 'Evapotranspiration', 'Rainfall', 'Relative Humidity', 
+        'Roughness', 'Slope', 'Temperature', 'Wind Speed', 'LST']]
+y = df['Type']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Create an AdaBoost classifier
+ada_boost = AdaBoostClassifier(n_estimators=100, random_state=42)
+
+# Fit the classifier to the training data
+ada_boost.fit(X_train, y_train)
+
+# Make predictions on the test data
+y_pred = ada_boost.predict(X_test)
+
+# Calculate the relative importance of each independent variable
+importances = ada_boost.feature_importances_
+
+# Normalize the importances to sum to 100%
+importances_percentage = (importances / importances.sum()) * 100
+
+# Print the feature importances in percentage format
+print("\nFeature Importances (%):")
+for i, feature in enumerate(X.columns):
+    print(f"{feature}: {importances_percentage[i]:.2f}%")  # Two decimal places for percentage
+
+# Obtain the predicted probabilities for each class
+y_prob = ada_boost.predict_proba(X_test)
+y_prob_pos = y_prob[:, 1]
+
+# Compute ROC curve and AUC score
+fpr, tpr, thresholds = roc_curve(y_test, y_prob_pos)
+roc_auc = auc(fpr, tpr)
+
+# Plot ROC curve
+plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.savefig('roc_curve.png')
+plt.show()
+
+# Display the AUC score
+print(f"\nAUC Score: {roc_auc:.2f}")
