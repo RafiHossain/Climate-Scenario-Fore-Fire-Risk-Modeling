@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('Dataset.csv')
 
 # Extract the features and target variable
-X = df[['Elevation', 'Slope', 'Curvature', 'Aspect', 'Roughness', 'Precipitation', 
-        'Evapotranspiration', 'LST', 'Temperature', 'RH', 'Wind Speed', 'Aridity Index', 
-        'CWD', 'LULC', 'NDWI', 'NDVI', 'NDMI', 'NDBI', 'LAI']]
+X = df[['Aridity Index', 'Aspect', 'Curvature', 'CWD', 'DEM', 'LAI', 'LULC', 'NDBI', 
+        'NDMI', 'NDVI', 'NDWI', 'LST', 'Evapotranspiration', 'Rainfall', 'Relative Humidity', 
+        'Roughness', 'Slope', 'Temperature', 'Wind Speed']]
 y = df['Type']
 
 # split the data into training and testing sets
@@ -34,7 +34,7 @@ print(f"Accuracy: {accuracy}")
 importances = rfc.feature_importances_
 for i, feature in enumerate(X.columns):
     print(f"{feature}: {importances[i]}")
-
+    
 # obtain the predicted probabilities for each class
 y_prob = rfc.predict_proba(X_test)
 y_prob_pos = y_prob[:, 1]
